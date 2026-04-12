@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教育哲學期中考——我的音樂啟蒙</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Noto Serif TC (適合中文長文閱讀的明體) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 引入 Phosphor Icons (圖示) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        :root {
+            --primary-bg: #2a0f00; /* 更換為帶有餘暉溫度的深棕橘色 */
+            --text-color: #fafaf9; /* 柔和的暖白色 */
+        }
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* 吉他背景與遮罩 */
+        .bg-guitar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* 換成充滿夕陽暖光與散景的吉他照片 */
+            background-image: url('https://images.unsplash.com/photo-1485686531765-ba63b07845a7?q=80&w=2066&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            z-index: -2;
+            transform: scale(1.05); /* 稍微放大以便做呼吸動畫 */
+            animation: breathe 30s infinite alternate ease-in-out;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* 減少暗沉，增加金黃與琥珀色的夕陽餘暉感 */
+            background: linear-gradient(135deg, rgba(180, 83, 9, 0.4) 0%, rgba(67, 20, 7, 0.75) 100%);
+            backdrop-filter: blur(3px); /* 稍微降低模糊度，讓夕陽的光影透出來 */
+            z-index: -1;
+        }
+
+        /* 背景輕微呼吸動畫 */
+        @keyframes breathe {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        /* 內容區塊的毛玻璃設計 */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 237, 213, 0.15); /* 加強邊框的一點點暖光 */
+            box-shadow: 0 25px 50px -12px rgba(67, 20, 7, 0.5); /* 陰影帶點暖棕色 */
+        }
+
+        /* 捲動進場動畫 (升級版) */
+        .fade-item {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
+        }
+        
+        .fade-item.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 內文排版細節 */
+        .article-content p {
+            margin-bottom: 2rem;
+            line-height: 2.2;
+            text-align: justify;
+            letter-spacing: 0.05em;
+            color: #fff7ed; /* 極淡的暖橘白 (orange-50) */
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 300;
+        }
+        
+        @media (min-width: 768px) {
+            .article-content p {
+                font-size: 1.25rem; /* text-xl for larger screens */
+            }
+        }
+
+        .article-content blockquote {
+            border-left: 3px solid #d97706; /* 溫暖的琥珀橘 (amber-600) */
+            padding-left: 1.5rem;
+            margin-left: 0;
+            margin-right: 0;
+            color: #fdba74; /* 柔和的淺橘 (orange-300) */
+            font-style: italic;
+        }
+
+        /* 歡迎遮罩 (用於獲取使用者互動以播放音樂) */
+        #welcome-screen {
+            position: fixed;
+            inset: 0;
+            /* 移除原本沉悶的實色背景，改為透出背景的夕陽光暈與毛玻璃 */
+            background: radial-gradient(circle at center, rgba(217, 119, 6, 0.15) 0%, rgba(42, 15, 0, 0.7) 100%);
+            backdrop-filter: blur(12px);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s ease, visibility 1s ease;
+        }
+
+        .btn-glow {
+            position: relative;
+        }
+        .btn-glow::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            /* 按鈕發光換成金黃/琥珀色系 */
+            background: linear-gradient(45deg, #fcd34d, #d97706, #fcd34d);
+            z-index: -1;
+            border-radius: 9999px;
+            filter: blur(8px);
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+        .btn-glow:hover::before {
+            opacity: 1;
+        }
+
+        /* 隱藏原生播放器，我們用自訂按鈕控制 */
+        #bg-music {
+            display: none;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-amber-900 selection:text-amber-100">
+
+    <!-- 背景圖層 -->
+    <div class="bg-guitar"></div>
+    <div class="bg-overlay"></div>
+
+    <!-- 歡迎/互動畫面 (解決瀏覽器自動播放限制) -->
+    <div id="welcome-screen">
+        <p class="text-amber-400 text-sm md:text-base tracking-[0.3em] mb-4 text-center px-4 drop-shadow-md">教育哲學期中考</p>
+        <h1 class="text-3xl md:text-5xl font-medium text-orange-50 mb-4 tracking-widest text-center px-4 drop-shadow-lg">我的音樂啟蒙</h1>
+        <h2 class="text-lg md:text-xl text-orange-200 font-light tracking-[0.15em] mb-12 text-center px-4 drop-shadow-md">從標準答案走向主體自由的思辨</h2>
+        <p class="text-amber-200/70 mb-12 text-center px-4 font-light tracking-wider text-sm">建議配戴耳機，享受沉浸式閱讀體驗</p>
+        <button id="start-btn" class="btn-glow bg-amber-600/70 backdrop-blur-md text-amber-50 px-8 py-4 rounded-full flex items-center gap-3 hover:bg-amber-600 transition duration-300 border border-amber-400/50 shadow-[0_0_20px_rgba(217,119,6,0.3)]">
+            <i class="ph ph-play-circle text-2xl"></i>
+            <span class="tracking-widest">開啟閱讀體驗</span>
+        </button>
+    </div>
+
+    <!-- 原生 HTML5 音樂播放器 (加入多個來源確保穩定) -->
+    <audio id="bg-music" loop preload="auto">
+        <!-- 來源一：Pixabay 無版權木吉他音樂 -->
+        <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
+        <!-- 來源二：備用測試音檔 -->
+        <source src="https://assets.mixkit.co/music/preview/mixkit-chill-bro-89.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 音樂控制浮動按鈕 -->
+    <button id="music-toggle" class="fixed bottom-6 right-6 z-40 bg-amber-900/60 backdrop-blur-md text-amber-100 p-4 rounded-full shadow-lg border border-amber-600/40 hover:bg-amber-800 transition duration-300 opacity-0 pointer-events-none transform translate-y-10">
+        <i id="music-icon" class="ph ph-speaker-high text-2xl"></i>
+    </button>
+
+    <!-- 主要內容區 -->
+    <main class="relative z-10 min-h-screen py-20 px-4 sm:px-6 lg:px-8">
+        <article class="max-w-3xl mx-auto glass-panel rounded-2xl p-8 md:p-16 lg:p-20 shadow-2xl border border-amber-900/30">
+            
+            <!-- 標題區 -->
+            <header class="mb-16 text-center" id="article-header">
+                <p class="text-amber-600/80 text-sm tracking-[0.2em] mb-4">教育哲學期中考</p>
+                <h1 class="text-3xl md:text-4xl lg:text-5xl font-medium text-orange-50 leading-snug tracking-wider mb-6">
+                    我的音樂啟蒙
+                </h1>
+                <div class="w-16 h-px bg-amber-700 mx-auto opacity-50"></div>
+            </header>
+
+            <!-- 文章內容 -->
+            <div class="article-content" id="article-body">
+                <p>每個人從小到大受的教育讓我們遇見不同的老師，這些老師各自有不同的價值觀與教法，也有自己熟悉或不熟悉的領域。最近修的課讓我重新回想，過去有沒有遇過真的啟發我的老師，遇見的似乎多是填鴨式的傳遞，考完便遺忘，真正留下並啟發我的老師寥寥無幾。而這次想要講的，是發生在最近的事，即將提到的這位同學，讓我窺見了「學習」的不同視角。</p>
+
+                <p>事情要講到這學期跟班上同學們一起組了共學圈圈，我們六個人想要學吉他，於是我們邀請班上一位同學來指導。這位同學——以下稱他為Ｊ——Ｊ的吉他經歷從高中開始，一路彈到現在，即便沒有了社團也持續精進「吉他」這項技藝；偶爾聽他談論起吉他，會發現他對吉他似乎有很深入的了解。</p>
+
+                <p>這不是我第一次學音樂，不如說，我的成長經歷充滿著音樂——幼稚園開始學鋼琴、小提琴、進五專加入熱音社，學鼓、也摸過吉他、貝斯，在課堂上可能要學唱歌、學直笛。一路懵懵懂懂地，似乎也沒認真想過音樂是怎麼回事，只知道喜歡聽歌。幼稚園時期，我被老師指導著要照著樂譜彈出來，再長大些，小提琴的拿琴姿勢讓我很頭痛。後來到了熱音社時期，我們玩音樂的方式就是很直接了當地，想開什麼歌，就上網找譜，試圖把它彈（打）出來。累積了一些實力就開始空耳抓譜，目標就是「彈出原曲」。</p>
+
+                <p>「原曲還原度」是我當時很重要的參考指標。不論是什麼樂器，我們會盡最大努力設法聽出原曲是怎麼彈奏的。不論是自己彈奏，還是評鑑其他團（我們當時需要互評彼此的演奏），都是以「你這裡彈得跟原曲不同」、「你這裡跟原曲不合」為基準，因為如果不一樣⋯⋯怎麼可能不一樣？那是很奇怪的一件事。至少當時的我是這麼想的。</p>
+
+                <p>但是這次學吉他的經歷似乎有些不同，讓我重新有另一個視角看「音樂」。</p>
+
+                <p>事情發生在寒假。以前只有學過吉他的皮毛，這次再度拾起吉他，一樣找了一些歌曲的樂譜來彈，特別是一些基本和弦組成的歌，嘗試累積一些初學者的成就感。很快我迎來了第一個挑戰——找譜時發現有兩個網站的譜寫得不一樣，和弦標得有一些不同。當下的我很驚慌，心想著「為什麼會不一樣？」發揮自學精神，我轉而開始找 YouTube 的影片，但發現每個人彈得也各自有差異。於是我有點慌張，如果不一樣的話，那我要彈哪一個？哪一個才是「最接近原曲的正確答案」？為什麼每個人可以彈法不同？</p>
+
+                <p>驚慌失措的我於是私訊問了Ｊ，詢問他的想法，試圖想要得到一個解答。Ｊ一開始解釋了「其實兩個就差了幾個音」，他接著說，「其實音樂沒有對錯，就是喜歡不喜歡，有打動沒打動而已。」</p>
+
+                <p>什麼！這個答案完全在我的思路之外。</p>
+
+                <p>看到文字的當下好像不能用醍醐灌頂來形容，因為我第一個感受到的是錯愕跟詫異——「什麼？沒有正確答案的話，那我該怎麼辦？不照原曲彈，還算在彈這首歌嗎？」內心的那股不確定感讓我有點無所適從，甚至有些小生氣，不告訴我哪個是正確解答算什麼！</p>
+
+                <p>冷靜下來思考之後，我開始細細揣摩「喜歡不喜歡」、「打動不打動」背後的道理。先別說我彈不彈得出來了，我有想過跟感受過，音樂是否真的有打動我嗎？對我來說，音樂的存在似乎就是一種背景跟負責引起情緒的作用，由於聽的都是搖滾樂，我大多是想要情緒釋放的時候才會聽。歌詞也少研究，樂句也少鑽研，打動——是一個什麼樣的感覺？似乎從小沒有被教導過如何感受。</p>
+
+                <p>以前有聽過音樂是無國界的語言這件事，即便語音不相通，不同國家的人來到同一首古典樂面前依然會因情感共情而感動落淚。然而，我的體驗時常是「聽不懂」為什麼好聽？回想常駐在我內心的歌，例如十分粗暴的《床》「築起了對快樂的心防，說什麼也放不下」，或是 “Wasted Nights”的「Don't be afraid to dive, be afraid that you didn't try」，這些都是因為歌詞直白又簡練，必須要是白話才能感受，因為那是這首歌的「正確答案」，不然我不知道怎麼解讀歌曲。我發現我很少問自己，這些歌詞引發我什麼感受，這些樂句引發我什麼感受。這也讓我想到，多年前跟朋友去唱 KTV，他說了一首歌「不想唱，這聽起來超像走音」，想起這段經歷跟Ｊ說的話，我才驚訝地發現——原來每個人可以對歌曲有自己的理解跟詮釋。</p>
+
+                <p>康德說美感是沒有正確答案的，然而過去，即便是自由的音樂也讓我感受到正確答案的迫切。美感是一個什麼樣的體驗？曾幾何時我把音樂當作是一個有正確答案的考題？</p>
+
+                <p>套用康德對於價值論、美感的定義，我想音樂是最能符合康德對「美」的四個維度：音樂無功利性，當我們單純聽音樂時，我們聽的就是音樂自身；當我們純粹被一段旋律打動時，腦中沒有任何利益算計或考試的考量。音樂能夠直接觸發我們的感官卻無法被證明為什麼帶給我們美的體驗（無概念涉入），最後，音樂最能體現康德所謂「無目的的合目的性」——它沒有實際用途，也不需要概念的涉入，卻能直接觸動感官，完美契合人類追求精神滿足的內在渴望。</p>
+
+                <p>最重要的是，音樂的不同形式都使我們愉悅。</p>
+
+                <p>更深一層來說，康德將純粹的美感視為「外在自然的必然性」與「內在精神的自由」相碰撞的瞬間。從彈奏者的角度，吉他指板上的格數、六根琴弦的物理聲波，代表著外在不可撼動的「必然性」；而當我不帶功利地撥動琴弦，拋開「原曲還原度」的包袱，摸索出一段能打動自己的詮釋時，我展現的正是內在「精神的自由」。而身為聆聽者的角度，爵士、搖滾、抒情、藍調⋯⋯單純的聲波透過不同的樂器呈現出不同的形式交織成豐富的樂曲，跟我的雙耳進到腦袋的瞬間，我的內在可以決定用什麼方式體驗它們。在這兩者相遇的當下，音樂就不再只是聲波或死板的樂譜，而是我與世界產生純粹美感連結的瞬間。</p>
+
+                <p>身為純粹的聆聽者，音樂是無功利的體驗；但當我轉換身分成為「演奏者」時，要創造出這種美感，就必須重新面對「技術與知識」的必然性。因此，我想借用康德的知識論核心：「沒有內容的思想是空洞的，沒有概念的直觀則是盲目的」，來思考「掌握音樂的知識」——</p>
+
+                <p>首先，「沒有樂理的聆聽經驗，是盲目的」——我們不能只知道一首歌「好聽」但不知道為什麼好聽，需要深入瞭解樂理，掌握音樂的組成對人類可能產生的感受，此時，聆聽經驗才會是有知識意義的；同時，「沒有聆聽經驗的樂理，是空洞的」——我們不會只知道 G 大調、C 大調、C、Am、G、E 之後，就聲稱自己已經懂了音樂，必須要累積對應的聆聽經驗，知道Ｃ大調給人愉悅的感受，且實際去體驗這樣的感受，才能說我們掌握了樂理。身為演奏者，必然是要有這兩者的合併，加上大量的聆聽，才有機會聲稱我「掌握」音樂這門「知識」，再加上練習演奏，才能夠彈奏出動人的美感體驗。在我心中掌握音樂的最高境界是爵士——能夠自由流暢地將技巧流出，在聲波與自由精神的碰撞感受到美。</p>
+
+                <p>除了提醒我美感體驗之外，Ｊ的回應，似乎也實踐了杜威的知識無目的論。一首曲子「好不好聽」、「打不打動」是非常個人的事情。為了能夠獲得打動自己的成果，我必須回到真實生活，回想自己過去的聆聽經驗，反覆在琴格上嘗試，才有辦法摸索出自己喜歡的彈奏風格。回首過去的學習，我往往只是被動地服從樂譜上的規則，從未感受過自己的「主體性」。杜威強調：「教育本身就是經驗的重組、改造與成長的過程。」如果Ｊ在那個當下回應我「彈Ａ網站的就好了」，那他便是預設了音樂存在著絕對的「正確答案」，並把「完美演奏這首曲子」當作學習的前提。這種直接「餵養答案」的教學方式，恰恰違背了杜威的理念——因為這麼做，是把外在的「完美演奏」當作教育的終極目的，而忽略了學習應該回到學生（我）的主體身上，成就個體經驗獨一無二的成長。</p>
+
+                <p>杜威也提醒我們，真正的教育必須在「民主」的狀態下進行。Ｊ的回應之所以能對我產生這麼大的啟發，正是因為他在無形中創造了一個「民主」的教育場域——他沒有展現出「老師說了算」的權威，而是包容了我的差異，容許我對原曲擁有不同的意見，他將詮釋的權力下放給了我。這讓我意識到，要讓「教育無目的論」與「經驗重組」真實發生，前提是我們必須先擁有互相尊重、平等對話的土壤。然而，可以想像這樣的教學很難普及，畢竟如果面對著一個班級 20、甚至 50 人時，理所當然地給答案是最直接也最快速、最有效率的選擇。當「效率」成為教育的最高指導原則時，我們便不自覺地預設了知識是死板的教條，直接剝奪了學生在摸索中犯錯與感受的權利。在這種以效率為主的運作下，學生不再是擁有獨特經驗的「主體」，而漸漸變成了被動接收知識的「客體」。</p>
+
+                <p>講到這裡，我也想拉進教育社會學中的《受壓迫者教育學》來討論。就弗雷勒的觀點，過去我所經歷的音樂教學屬於囤積式教育的範疇：我需要符合規則、符合樂譜，在音樂面前，我是儲存樂譜知識的容器，我沒有思考的空間。我被當作沒有創造力的客體，也沒有思考過音樂可以為我所用，反而反過來認為是神聖不可魔改的存在。Ｊ所實踐的，即是「提問式教育」——他並不是以一個知者的權威來灌輸我，而是把自己拉到跟我對等的位置，以一個引導者的身份，把我當作主體、音樂當作客體共同討論。當我們身為主體，必然可以有自己對於音樂的理解與詮釋，先前提到的朋友認為歌曲很像走音，也就十分合理了。</p>
+
+                <p>諷刺的是，當Ｊ給予我極大的空間時，我感受到的即是「對自由的恐懼」——即我已經習慣了被灌輸的正確答案，已經習慣了有正確答案的依賴感，反而需要時間克服這種被抽掉正確答案的感覺，狼狽且脆弱地摸索著屬於自己的美感體驗。畢竟，能自由彈出來也非一蹴可幾，當我嘗試在摸索每一個段落我試圖要怎麼呈現時，我得反覆問自己「聽起來感覺怎麼樣」、「我有感覺嗎」？其實當主體的過程一點也不輕鬆，但在過程中，可以感受到「我」被凸顯了出來。</p>
+
+                <p>綜上，Ｊ的一句簡單回應，讓我體驗到了從「死守標準答案的標準觀」到「以主體感受為核心的美學觀」的典範轉移——我後來漸漸學習找到樂譜時先彈奏出來聽聽看自己喜不喜歡，摸索了自己喜歡的彈法，聽起來順耳也開心，第一次感受到「我自己」的詮釋。甚至後來在彈奏新的歌曲時，嘗試加入不同的拍子以及刷法，有別以往平鋪直敘地彈奏，我竟想要 spice it up a little bit。時常會聽到Ｊ聽歌時在自言自語「為什麼要在這裡安插這個和弦呢，真有趣」，此時我就會重新想像，作曲／編曲者為什麼會這樣寫歌，這樣的想像讓我的音樂世界擴張。</p>
+
+                <p>但也或許，這一切都只是我自己的腦補分析，我大概可以想像當我這樣回饋時，Ｊ會撓撓頭說：「噢，可是我好像沒想這麼多耶，就只是覺得是這樣。」</p>
+
+                <p class="text-center mt-12 text-amber-700/80 italic">不論如何，依舊十分感激這位同學，這篇文章同時獻給他。</p>
+            </div>
+        </article>
+    </main>
+
+    <!-- 腳本與控制邏輯 -->
+    <script>
+        // 在網頁載入時，先把所有段落設定為「準備淡入」的隱藏狀態
+        document.addEventListener("DOMContentLoaded", () => {
+            const fadeElements = document.querySelectorAll('#article-header, #article-body p, #article-body blockquote, .text-center.italic');
+            fadeElements.forEach(el => {
+                el.classList.add('fade-item');
+            });
+        });
+
+        // 取得音樂播放器與介面元素
+        const bgMusic = document.getElementById('bg-music');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const startBtn = document.getElementById('start-btn');
+        const musicToggleBtn = document.getElementById('music-toggle');
+        const musicIcon = document.getElementById('music-icon');
+        let isPlaying = false;
+
+        // 設定合適的背景音量
+        bgMusic.volume = 0.35;
+
+        // 點擊開啟閱讀體驗
+        startBtn.addEventListener('click', () => {
+            // 1. 淡出歡迎畫面
+            welcomeScreen.style.opacity = '0';
+            setTimeout(() => {
+                welcomeScreen.style.visibility = 'hidden';
+            }, 1000);
+
+            // 2. 顯示浮動音樂控制鈕
+            musicToggleBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+            musicToggleBtn.classList.add('opacity-100', 'translate-y-0');
+
+            // 3. 播放音樂
+            bgMusic.play().then(() => {
+                isPlaying = true;
+                musicIcon.classList.remove('ph-speaker-slash');
+                musicIcon.classList.add('ph-speaker-high');
+            }).catch((error) => {
+                console.log("音樂自動播放被阻擋或載入失敗：", error);
+                musicIcon.classList.remove('ph-speaker-high');
+                musicIcon.classList.add('ph-speaker-slash');
+            });
+
+            // 4. 啟動「捲動淡入」觀察器 (Intersection Observer)
+            // 這樣文字才會等你按下按鈕後，才開始依照捲動位置浮現
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15 // 元素出現 15% 時觸發動畫
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target); // 觸發後就不再觀察
+                    }
+                });
+            }, observerOptions);
+
+            // 稍微延遲一下，等遮罩開始消失時再觸發第一波文字動畫，視覺會更自然
+            setTimeout(() => {
+                const fadeElements = document.querySelectorAll('.fade-item');
+                fadeElements.forEach(el => {
+                    observer.observe(el);
+                });
+            }, 400); 
+        });
+
+        // 右下角音樂開關控制
+        musicToggleBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                bgMusic.pause();
+                musicIcon.classList.remove('ph-speaker-high');
+                musicIcon.classList.add('ph-speaker-slash');
+            } else {
+                bgMusic.play();
+                musicIcon.classList.remove('ph-speaker-slash');
+                musicIcon.classList.add('ph-speaker-high');
+            }
+            isPlaying = !isPlaying;
+        });
+
+        // 捲動時的視差效果 (些微移動背景)
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const bgGuitar = document.querySelector('.bg-guitar');
+            if(bgGuitar) {
+                bgGuitar.style.transform = `scale(1.05) translateY(${scrolled * 0.05}px)`;
+            }
+        });
+    </script>
+</body>
+</html>
