@@ -167,12 +167,12 @@
         </button>
     </div>
 
-    <!-- 原生 HTML5 音樂播放器 (加入多個來源確保穩定) -->
+    <!-- 原生 HTML5 音樂播放器 (換上最穩定的開源免費音樂庫 FMA 與 Audionautix) -->
     <audio id="bg-music" loop preload="auto">
-        <!-- 來源一：Pixabay 無版權木吉他音樂 -->
-        <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
-        <!-- 來源二：備用測試音檔 -->
-        <source src="https://assets.mixkit.co/music/preview/mixkit-chill-bro-89.mp3" type="audio/mpeg">
+        <!-- 來源一：Jason Shaw - Acoustic Guitar (開源授權，允許自由串流) -->
+        <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Jason_Shaw/Audionautix_Acoustic/Jason_Shaw_-_ACOUSTIC_GUITAR_1.mp3" type="audio/mpeg">
+        <!-- 來源二：Audionautix 直連備用 -->
+        <source src="https://audionautix.com/Music/AcousticGuitar1.mp3" type="audio/mpeg">
     </audio>
 
     <!-- 音樂控制浮動按鈕 -->
@@ -190,6 +190,11 @@
                 <h1 class="text-3xl md:text-4xl lg:text-5xl font-medium text-orange-50 leading-snug tracking-wider mb-6">
                     我的音樂啟蒙
                 </h1>
+                <div class="text-amber-200/70 text-sm md:text-base font-light tracking-wider mb-8 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+                    <span>國立清華大學學習科學與科技研究所</span>
+                    <span class="hidden sm:inline opacity-50">|</span>
+                    <span>113291505 余采鈴</span>
+                </div>
                 <div class="w-16 h-px bg-amber-700 mx-auto opacity-50"></div>
             </header>
 
@@ -262,12 +267,58 @@
         const startBtn = document.getElementById('start-btn');
         const musicToggleBtn = document.getElementById('music-toggle');
         const musicIcon = document.getElementById('music-icon');
-        let isPlaying = false;
+        
+        let playPromise; // 統一管理 Promise 狀態
 
-        // 設定合適的背景音量
-        bgMusic.volume = 0.35;
+        // 設定合適的背景音量 (稍微調高一點確保能聽見)
+        bgMusic.volume = 0.5;
 
-        // 點擊開啟閱讀體驗
+        // 統一的音樂圖示更新邏輯
+        function updateMusicIcon() {
+            if (bgMusic.paused) {
+                musicIcon.className = 'ph ph-speaker-slash text-2xl';
+            } else {
+                musicIcon.className = 'ph ph-speaker-high text-2xl';
+            }
+        }
+
+        // 安全播放機制 (防止 AbortError 核心解法)
+        function safePlay() {
+            // 確保音檔如果被瀏覽器休眠，可以強制重新載入
+            if (bgMusic.readyState === 0) {
+                bgMusic.load();
+            }
+
+            playPromise = bgMusic.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    updateMusicIcon();
+                }).catch(error => {
+                    // 正確捕捉 Promise Rejection，避免 Unhandled 報錯
+                    console.log("音樂播放暫緩或失效：", error.message);
+                    updateMusicIcon();
+                });
+            }
+        }
+
+        // 安全暫停機制
+        function safePause() {
+            if (playPromise !== undefined) {
+                // 必須等 playPromise 解析完畢才能呼叫 pause()，否則必定觸發 AbortError
+                playPromise.then(() => {
+                    bgMusic.pause();
+                    updateMusicIcon();
+                }).catch(error => {
+                    // 如果播放原本就被阻擋了，就什麼也不用做，圖示依舊會是暫停狀態
+                    updateMusicIcon();
+                });
+            } else {
+                bgMusic.pause();
+                updateMusicIcon();
+            }
+        }
+
+        // 點擊開啟閱讀體驗 (使用 { once: true } 確保只觸發一次，防止連點衝突)
         startBtn.addEventListener('click', () => {
             // 1. 淡出歡迎畫面
             welcomeScreen.style.opacity = '0';
@@ -279,56 +330,46 @@
             musicToggleBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
             musicToggleBtn.classList.add('opacity-100', 'translate-y-0');
 
-            // 3. 播放音樂
-            bgMusic.play().then(() => {
-                isPlaying = true;
-                musicIcon.classList.remove('ph-speaker-slash');
-                musicIcon.classList.add('ph-speaker-high');
-            }).catch((error) => {
-                console.log("音樂自動播放被阻擋或載入失敗：", error);
-                musicIcon.classList.remove('ph-speaker-high');
-                musicIcon.classList.add('ph-speaker-slash');
-            });
+            // 3. 安全播放音樂
+            safePlay();
 
-            // 4. 啟動「捲動淡入」觀察器 (Intersection Observer)
-            // 這樣文字才會等你按下按鈕後，才開始依照捲動位置浮現
+            // 4. 啟動「捲動淡入」觀察器
             const observerOptions = {
                 root: null,
                 rootMargin: '0px',
-                threshold: 0.15 // 元素出現 15% 時觸發動畫
+                threshold: 0.15 
             };
 
             const observer = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         entry.target.classList.add('is-visible');
-                        observer.unobserve(entry.target); // 觸發後就不再觀察
+                        observer.unobserve(entry.target); 
                     }
                 });
             }, observerOptions);
 
-            // 稍微延遲一下，等遮罩開始消失時再觸發第一波文字動畫，視覺會更自然
+            // 稍微延遲一下，等遮罩開始消失時再觸發第一波文字動畫
             setTimeout(() => {
                 const fadeElements = document.querySelectorAll('.fade-item');
                 fadeElements.forEach(el => {
                     observer.observe(el);
                 });
             }, 400); 
-        });
+        }, { once: true });
 
         // 右下角音樂開關控制
         musicToggleBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                bgMusic.pause();
-                musicIcon.classList.remove('ph-speaker-high');
-                musicIcon.classList.add('ph-speaker-slash');
+            if (bgMusic.paused) {
+                safePlay();
             } else {
-                bgMusic.play();
-                musicIcon.classList.remove('ph-speaker-slash');
-                musicIcon.classList.add('ph-speaker-high');
+                safePause();
             }
-            isPlaying = !isPlaying;
         });
+
+        // 確保音樂被系統或其他外部因素暫停時，圖示能自動同步
+        bgMusic.addEventListener('pause', updateMusicIcon);
+        bgMusic.addEventListener('play', updateMusicIcon);
 
         // 捲動時的視差效果 (些微移動背景)
         window.addEventListener('scroll', () => {
