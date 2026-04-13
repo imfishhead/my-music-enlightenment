@@ -143,9 +143,14 @@
             opacity: 1;
         }
 
-        /* 隱藏原生播放器，我們用自訂按鈕控制 */
-        #bg-music {
-            display: none;
+        /* 隱藏 YouTube 播放器容器 */
+        #youtube-player-container {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -9999;
         }
     </style>
 </head>
@@ -160,20 +165,17 @@
         <p class="text-amber-400 text-sm md:text-base tracking-[0.3em] mb-4 text-center px-4 drop-shadow-md">教育哲學期中考</p>
         <h1 class="text-3xl md:text-5xl font-medium text-orange-50 mb-4 tracking-widest text-center px-4 drop-shadow-lg">我的音樂啟蒙</h1>
         <h2 class="text-lg md:text-xl text-orange-200 font-light tracking-[0.15em] mb-12 text-center px-4 drop-shadow-md">從標準答案走向主體自由的思辨</h2>
-        <p class="text-amber-200/70 mb-12 text-center px-4 font-light tracking-wider text-sm">建議配戴耳機，並準備一杯咖啡，享受沉浸式閱讀體驗</p>
+        <p class="text-amber-200/70 mb-12 text-center px-4 font-light tracking-wider text-sm">建議配戴耳機，享受沉浸式閱讀體驗</p>
         <button id="start-btn" class="btn-glow bg-amber-600/70 backdrop-blur-md text-amber-50 px-8 py-4 rounded-full flex items-center gap-3 hover:bg-amber-600 transition duration-300 border border-amber-400/50 shadow-[0_0_20px_rgba(217,119,6,0.3)]">
             <i class="ph ph-play-circle text-2xl"></i>
             <span class="tracking-widest">開啟閱讀體驗</span>
         </button>
     </div>
 
-    <!-- 原生 HTML5 音樂播放器 (換上最穩定的開源免費音樂庫 FMA 與 Audionautix) -->
-    <audio id="bg-music" loop preload="auto">
-        <!-- 來源一：Jason Shaw - Acoustic Guitar (開源授權，允許自由串流) -->
-        <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Jason_Shaw/Audionautix_Acoustic/Jason_Shaw_-_ACOUSTIC_GUITAR_1.mp3" type="audio/mpeg">
-        <!-- 來源二：Audionautix 直連備用 -->
-        <source src="https://audionautix.com/Music/AcousticGuitar1.mp3" type="audio/mpeg">
-    </audio>
+    <!-- YouTube 隱藏播放器容器 -->
+    <div id="youtube-player-container">
+        <div id="youtube-player"></div>
+    </div>
 
     <!-- 音樂控制浮動按鈕 -->
     <button id="music-toggle" class="fixed bottom-6 right-6 z-40 bg-amber-900/60 backdrop-blur-md text-amber-100 p-4 rounded-full shadow-lg border border-amber-600/40 hover:bg-amber-800 transition duration-300 opacity-0 pointer-events-none transform translate-y-10">
@@ -186,8 +188,8 @@
             
             <!-- 標題區 -->
             <header class="mb-16 text-center" id="article-header">
-                <p class="text-orange-600/80 text-sm tracking-[0.2em] mb-4">1142〈教育哲學〉期中考</p>
-                <h1 class="text-3xl md:text-4xl lg:text-5xl font-medium leading-snug tracking-wider mb-6">
+                <p class="text-amber-600/80 text-sm tracking-[0.2em] mb-4">教育哲學期中考</p>
+                <h1 class="text-3xl md:text-4xl lg:text-5xl font-medium text-orange-50 leading-snug tracking-wider mb-6">
                     我的音樂啟蒙
                 </h1>
                 <div class="text-amber-200/70 text-sm md:text-base font-light tracking-wider mb-8 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
@@ -246,7 +248,7 @@
 
                 <p>但也或許，這一切都只是我自己的腦補分析，我大概可以想像當我這樣回饋時，Ｊ會撓撓頭說：「噢，可是我好像沒想這麼多耶，就只是覺得是這樣。」</p>
 
-                <p class="text-center mt-12 text-amber-700/80">不論如何，依舊十分感激這位同學，這篇文章同時獻給他。</p>
+                <p class="text-center mt-12 text-amber-700/80 italic">不論如何，依舊十分感激這位同學，這篇文章同時獻給他。</p>
             </div>
         </article>
     </main>
@@ -261,64 +263,73 @@
             });
         });
 
-        // 取得音樂播放器與介面元素
-        const bgMusic = document.getElementById('bg-music');
+        // UI 元素
         const welcomeScreen = document.getElementById('welcome-screen');
         const startBtn = document.getElementById('start-btn');
         const musicToggleBtn = document.getElementById('music-toggle');
         const musicIcon = document.getElementById('music-icon');
-        
-        let playPromise; // 統一管理 Promise 狀態
 
-        // 設定合適的背景音量 (稍微調高一點確保能聽見)
-        bgMusic.volume = 0.5;
+        // --- YouTube API 整合 ---
+        var player;
+        var isPlayerReady = false;
+        // 這裡可以替換成你喜歡的 YouTube 影片 ID (目前預設為一首溫暖的木吉他樂曲)
+        var defaultVideoId = 'YdMn8xzCOS0'; 
 
-        // 統一的音樂圖示更新邏輯
-        function updateMusicIcon() {
-            if (bgMusic.paused) {
-                musicIcon.className = 'ph ph-speaker-slash text-2xl';
-            } else {
+        // 1. 動態載入 YouTube IFrame API
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        // 2. API 載入完成後會自動呼叫此函數
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '10',
+                width: '10',
+                videoId: defaultVideoId,
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'loop': 1,
+                    'playlist': defaultVideoId, // loop 需要 playlist
+                    'playsinline': 1,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // 3. 播放器準備就緒
+        function onPlayerReady(event) {
+            isPlayerReady = true;
+            player.setVolume(35); // 設定音量 (0-100)
+        }
+
+        // 4. 監聽播放狀態改變 (同步右下角圖示)
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING) {
                 musicIcon.className = 'ph ph-speaker-high text-2xl';
-            }
-        }
-
-        // 安全播放機制 (防止 AbortError 核心解法)
-        function safePlay() {
-            // 確保音檔如果被瀏覽器休眠，可以強制重新載入
-            if (bgMusic.readyState === 0) {
-                bgMusic.load();
-            }
-
-            playPromise = bgMusic.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    updateMusicIcon();
-                }).catch(error => {
-                    // 正確捕捉 Promise Rejection，避免 Unhandled 報錯
-                    console.log("音樂播放暫緩或失效：", error.message);
-                    updateMusicIcon();
-                });
-            }
-        }
-
-        // 安全暫停機制
-        function safePause() {
-            if (playPromise !== undefined) {
-                // 必須等 playPromise 解析完畢才能呼叫 pause()，否則必定觸發 AbortError
-                playPromise.then(() => {
-                    bgMusic.pause();
-                    updateMusicIcon();
-                }).catch(error => {
-                    // 如果播放原本就被阻擋了，就什麼也不用做，圖示依舊會是暫停狀態
-                    updateMusicIcon();
-                });
             } else {
-                bgMusic.pause();
-                updateMusicIcon();
+                musicIcon.className = 'ph ph-speaker-slash text-2xl';
             }
         }
 
-        // 點擊開啟閱讀體驗 (使用 { once: true } 確保只觸發一次，防止連點衝突)
+        function safePlay() {
+            if (isPlayerReady && typeof player.playVideo === 'function') {
+                player.playVideo();
+            }
+        }
+
+        function safePause() {
+            if (isPlayerReady && typeof player.pauseVideo === 'function') {
+                player.pauseVideo();
+            }
+        }
+
+        // 點擊開啟閱讀體驗 (使用 { once: true } 確保只觸發一次)
         startBtn.addEventListener('click', () => {
             // 1. 淡出歡迎畫面
             welcomeScreen.style.opacity = '0';
@@ -330,8 +341,19 @@
             musicToggleBtn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
             musicToggleBtn.classList.add('opacity-100', 'translate-y-0');
 
-            // 3. 安全播放音樂
-            safePlay();
+            // 3. 播放 YouTube 音樂 (若 API 還沒準備好，稍作等待)
+            if (isPlayerReady) {
+                safePlay();
+            } else {
+                let retryCount = 0;
+                let checkReady = setInterval(() => {
+                    if (isPlayerReady) {
+                        safePlay();
+                        clearInterval(checkReady);
+                    }
+                    if (retryCount++ > 20) clearInterval(checkReady); // 最多等 2 秒
+                }, 100);
+            }
 
             // 4. 啟動「捲動淡入」觀察器
             const observerOptions = {
@@ -360,16 +382,14 @@
 
         // 右下角音樂開關控制
         musicToggleBtn.addEventListener('click', () => {
-            if (bgMusic.paused) {
-                safePlay();
-            } else {
+            if (!isPlayerReady) return;
+            
+            if (player.getPlayerState() == YT.PlayerState.PLAYING) {
                 safePause();
+            } else {
+                safePlay();
             }
         });
-
-        // 確保音樂被系統或其他外部因素暫停時，圖示能自動同步
-        bgMusic.addEventListener('pause', updateMusicIcon);
-        bgMusic.addEventListener('play', updateMusicIcon);
 
         // 捲動時的視差效果 (些微移動背景)
         window.addEventListener('scroll', () => {
